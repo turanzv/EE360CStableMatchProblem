@@ -31,6 +31,16 @@ public class Main {
 		populateLists(professorList, sc, professors, students);
 		populateLists(studentList, sc, students, professors);
 		
+		Preferences p = new Preferences(professors, students, professorList, studentList);
+		p.setNumberOfProfessors(professors);
+		p.setNumberOfStudents(students);
+		
+		//Assignment1.stableMatchBruteForce(p);
+		
+		Assignment1.stableMatchGaleShapley(p);
+		
+		//Assignment1.stableMatchCosts(p);
+		
 		sc.close();
 	}
 	
