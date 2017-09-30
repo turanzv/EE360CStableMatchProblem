@@ -58,7 +58,3 @@ public class Preferences {
         this.students_preference = students_preference;
     }
 }
-
-public class Preferences {
-
-}
