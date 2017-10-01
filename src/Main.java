@@ -16,32 +16,15 @@ public class Main {
 		File dataOne = new File(args[0]);
 		File dataTwo = new File(args[1]);
 		
-		Scanner sc = new Scanner(dataOne);
+		Preferences p1 = preferencesFromFile(dataOne);
+		Preferences p2 = preferencesFromFile(dataTwo);
 		
-		//get the number of professors and the number of students
-		String s = sc.nextLine();
-		String[] nums = s.split("[ /]+");
+		//Assignment1.stableMatchBruteForce(p1);
 		
-		int professors = Integer.parseInt(nums[0]);
-		ArrayList<ArrayList<Integer>> professorList = new ArrayList<ArrayList<Integer>>();
+		Assignment1.stableMatchGaleShapley(p1);
+		Assignment1.stableMatchGaleShapley(p2);
 		
-		int students = Integer.parseInt(nums[1]);
-		ArrayList<ArrayList<Integer>> studentList = new ArrayList<ArrayList<Integer>>();
-		
-		populateLists(professorList, sc, professors, students);
-		populateLists(studentList, sc, students, professors);
-		
-		Preferences p = new Preferences(professors, students, professorList, studentList);
-		p.setNumberOfProfessors(professors);
-		p.setNumberOfStudents(students);
-		
-		//Assignment1.stableMatchBruteForce(p);
-		
-		Assignment1.stableMatchGaleShapley(p);
-		
-		//Assignment1.stableMatchCosts(p);
-		
-		sc.close();
+		//Assignment1.stableMatchCosts(p1);
 	}
 	
 	/**
@@ -64,6 +47,37 @@ public class Main {
 			}
 			
 		}
+	}
+	
+	/**
+	 * Returns Preference object based on data from an input file
+	 * @param f file with professor and student preferences
+	 * @return Preference object
+	 */
+	public static Preferences preferencesFromFile(File f) throws FileNotFoundException{ 
+		
+		Scanner sc = new Scanner(f);
+		
+		//get the number of professors and the number of students
+		String s = sc.nextLine();
+		String[] nums = s.split("[ /]+");
+		
+		int professors = Integer.parseInt(nums[0]);
+		ArrayList<ArrayList<Integer>> professorList = new ArrayList<ArrayList<Integer>>();
+		
+		int students = Integer.parseInt(nums[1]);
+		ArrayList<ArrayList<Integer>> studentList = new ArrayList<ArrayList<Integer>>();
+		
+		populateLists(professorList, sc, professors, students);
+		populateLists(studentList, sc, students, professors);
+		
+		Preferences p = new Preferences(professors, students, professorList, studentList);
+		p.setNumberOfProfessors(professors);
+		p.setNumberOfStudents(students);
+		
+		sc.close();
+		
+		return p;
 	}
 
 }

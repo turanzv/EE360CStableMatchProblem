@@ -33,7 +33,9 @@ public class Assignment1 {
     			for(int j = 0; j < professorPreference.size(); j++) {
     				//if student is not taken, take student
     				if(!students[professorPreference.get(j)-1]) {
+    					//pair student with professor, mark the student taken
     					pairing.add(professorPreference.get(j));
+    					students[professorPreference.get(j)-1] = true;
     					break;
     				}
     			}
