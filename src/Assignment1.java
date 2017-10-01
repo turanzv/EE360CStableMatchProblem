@@ -32,7 +32,7 @@ public class Assignment1 {
     			//traverse preferences first through last
     			for(int j = 0; j < professorPreference.size(); j++) {
     				//if student is not taken, take student
-    				if(!students[professorPreference.get(j)]) {
+    				if(!students[professorPreference.get(j)-1]) {
     					pairing.add(professorPreference.get(j));
     					break;
     				}
