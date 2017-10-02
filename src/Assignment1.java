@@ -32,6 +32,28 @@ public class Assignment1 {
 		for (int i = 0; i < professors.length; i++) {pList.add(i+1);}
 		ArrayList<ArrayList<Integer>> professorPermutations = new ArrayList<ArrayList<Integer>>();
 		permuteHeap(professors.length, professorPermutations, pList.toArray(new Integer[pList.size()]));
+		//get every permutation of students
+		ArrayList<Integer> sList = new ArrayList<Integer>();
+		for (int i = 0; i < students.length; i++) {sList.add(i+1);}
+		ArrayList<ArrayList<Integer>> studentPermutations = new ArrayList<ArrayList<Integer>>();
+		permuteHeap(professors.length, studentPermutations, sList.toArray(new Integer[sList.size()]));
+		
+		//iterate through permutations, checking each pairing for stability
+		for(int i = 0; i < professorPermutations.size(); i++) {
+			for(int j = 0; j < studentPermutations.size(); j++) {
+				
+				ArrayList<Integer> currentProfessors = professorPermutations.get(i);
+				ArrayList<Integer> currentStudents = studentPermutations.get(j);
+				
+				for(int k = 0; k < currentProfessors.size(); k++) {
+					for(int l = 0; l < currentStudents.size(); l++) {
+						pairing.set(currentProfessors.get(k-1), currentStudents.get(l));
+					}
+				}
+				//check pairing, if stable return
+				
+			}
+		}
 
 		return new ArrayList<Integer>();
 	}
