@@ -19,10 +19,11 @@ public class Main {
 		Preferences p1 = preferencesFromFile(dataOne);
 		Preferences p2 = preferencesFromFile(dataTwo);
 		
-		Assignment1.stableMatchBruteForce(p1);
-		
 		Assignment1.stableMatchGaleShapley(p1);
 		Assignment1.stableMatchGaleShapley(p2);
+		
+		Assignment1.stableMatchBruteForce(p1);
+		Assignment1.stableMatchBruteForce(p2);
 		
 		//Assignment1.stableMatchCosts(p1);
 	}
