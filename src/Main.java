@@ -22,6 +22,9 @@ public class Main {
 		Assignment1.stableMatchGaleShapley(p1);
 		Assignment1.stableMatchGaleShapley(p2);
 		
+		Assignment1.studentGaleShapely(p1);
+		Assignment1.studentGaleShapely(p2);
+		
 		Assignment1.stableMatchBruteForce(p1);
 		Assignment1.stableMatchBruteForce(p2);
 		

@@ -4,6 +4,7 @@
  */
 
 import java.lang.reflect.Array;
+import java.security.AlgorithmConstraints;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,8 +24,8 @@ public class Assignment1 {
 
 		// taken = true
 		// also used to gauge number of students and professors
-		boolean[] students = new boolean[preferences.getNumberOfStudents()];
-		boolean[] professors = new boolean[preferences.getNumberOfProfessors()];
+		// boolean[] students = new boolean[preferences.getNumberOfStudents()];
+		// boolean[] professors = new boolean[preferences.getNumberOfProfessors()];
 
 		// ArrayList of professor preferences
 		// ArrayList<ArrayList<Integer>> professorList =
@@ -33,28 +34,29 @@ public class Assignment1 {
 		// preferences.getStudents_preference();
 
 		// get every permutation of professors
-		//ArrayList<Integer> pList = new ArrayList<Integer>();
-		//for (int i = 0; i < professors.length; i++) {
-		//	pList.add(i + 1);
-		//}
-		//ArrayList<ArrayList<Integer>> professorPermutations = new ArrayList<ArrayList<Integer>>();
-		//permuteHeap(professors.length, professorPermutations, pList.toArray(new Integer[pList.size()]));
+		// ArrayList<Integer> pList = new ArrayList<Integer>();
+		// for (int i = 0; i < professors.length; i++) {
+		// pList.add(i + 1);
+		// }
+		// ArrayList<ArrayList<Integer>> professorPermutations = new
+		// ArrayList<ArrayList<Integer>>();
+		// permuteHeap(professors.length, professorPermutations, pList.toArray(new
+		// Integer[pList.size()]));
 
 		// get every permutation of students
 		ArrayList<Integer> sList = new ArrayList<Integer>();
-		for (int i = 0; i < students.length; i++) {
+		for (int i = 0; i < preferences.getNumberOfStudents(); i++) {
 			sList.add(i + 1);
 		}
-		ArrayList<ArrayList<Integer>> studentPermutations = new ArrayList<ArrayList<Integer>>();
-		permuteHeap(professors.length, studentPermutations, sList.toArray(new Integer[sList.size()]));
+		ArrayList<ArrayList<Integer>> studentPermutations = permuteHeaps(preferences.getNumberOfStudents(), sList);
 
 		// iterate through permutations, checking each pairing for stability
-		//for (int i = 0; i < professorPermutations.size(); i++) {
-		for (int i = 0;  i < pairing.size(); i++) {
+		// for (int i = 0; i < professorPermutations.size(); i++) {
+		for (int i = 0; i < pairing.size(); i++) {
 
 			for (int j = 0; j < studentPermutations.size(); j++) {
 
-				//ArrayList<Integer> currentProfessors = professorPermutations.get(i);
+				// ArrayList<Integer> currentProfessors = professorPermutations.get(i);
 				ArrayList<Integer> currentStudents = studentPermutations.get(j);
 
 				for (int k = 0; k < currentStudents.size(); k++) {
@@ -85,7 +87,7 @@ public class Assignment1 {
 		// for each professor, while there is a professor not matched
 		while (pairing.contains(-1)) {
 			PROFS: for (int i = 0; i < preferences.getNumberOfProfessors(); i++) {
-				if(pairing.get(i) != -1) {
+				if (pairing.get(i) != -1) {
 					continue;
 				}
 				int professor = i + 1;
@@ -108,7 +110,7 @@ public class Assignment1 {
 
 						// iterate through student's preferenceList
 						ArrayList<Integer> studentPreference = studentList.get(student - 1);
-						STUPREF: for (int k = 0; k < studentPreference.size(); k++) {
+						for (int k = 0; k < studentPreference.size(); k++) {
 							// if pX comes first, leave student pair
 							if (studentPreference.get(k) == pX) {
 								break;
@@ -129,8 +131,68 @@ public class Assignment1 {
 
 	// Part3: Matching with Costs
 	public static ArrayList<Cost> stableMatchCosts(Preferences preferences) {
+		// get professor's optimal pairing
+		ArrayList<Integer> profOpt = stableMatchGaleShapley(preferences);
+
+		// get student's optimal pairing
+		ArrayList<Integer> stuOpt = studentGaleShapely(preferences);
 
 		return new ArrayList<Cost>();
+	}
+
+	public static ArrayList<Integer> studentGaleShapely(Preferences preferences) {
+
+		// ArrayList<Integer> to be returned
+		ArrayList<Integer> pairing = new ArrayList<Integer>(
+				Collections.nCopies(preferences.getNumberOfProfessors(), -1));
+
+		ArrayList<ArrayList<Integer>> professorList = preferences.getProfessors_preference();
+		ArrayList<ArrayList<Integer>> studentList = preferences.getStudents_preference();
+
+		// for each student, while there is a student not matched
+		while (pairing.contains(-1)) {
+
+			// iterate through each student
+			for (int i = 0; i < preferences.getNumberOfStudents(); i++) {
+				// of the student is in the array, skip loop
+				if (arrayListIndexOf(pairing, i + 1) != -1) {
+					continue;
+				}
+
+				int student = i + 1;
+				ArrayList<Integer> studentPreference = studentList.get(student - 1);
+
+				// traverse preferences first through last
+				STUPREF: for (int j = 0; j < studentPreference.size(); j++) {
+					// if professor is not taken, take the professor
+					int professor = studentPreference.get(j);
+					if (pairing.get(professor - 1) == -1) {
+						pairing.set(professor - 1, student);
+						break;
+					} else { // if professor is taken, check if professor would rather be with s than with sX
+
+						// find which student is paired with the professor
+						int sX = pairing.get(professor - 1);
+
+						// iterate through professor's preferenceList
+						ArrayList<Integer> professorPreference = professorList.get(professor - 1);
+						for (int k = 0; k < professorPreference.size(); k++) {
+							// if sX comes first, leave professor pair
+							if (professorPreference.get(k) == sX) {
+								break;
+							} else if (professorPreference.get(k) == student) { // if s comes first, swap professor
+								pairing.set(professor, student); //put student to current professor
+								break STUPREF;
+							}
+						}
+					}
+				}
+			}
+
+		}
+
+		return pairing;
+
 	}
 
 	/**
@@ -213,7 +275,7 @@ public class Assignment1 {
 	 * @param aL
 	 * @param a
 	 */
-	public static void permuteHeap(int size, ArrayList<ArrayList<Integer>> aL, Integer[] a) {
+	public static void permuteHeapRecursive(int size, ArrayList<ArrayList<Integer>> aL, Integer[] a) {
 
 		if (size == 1) {
 			ArrayList<Integer> toAdd = new ArrayList<Integer>();
@@ -223,7 +285,7 @@ public class Assignment1 {
 			aL.add(toAdd);
 		} else {
 			for (int i = 0; i < size - 1; i++) {
-				permuteHeap(size - 1, aL, a);
+				permuteHeapRecursive(size - 1, aL, a);
 				if (size % 2 == 0) {
 					int temp = a[i];
 					a[i] = a[size - 1];
@@ -234,8 +296,35 @@ public class Assignment1 {
 					a[i] = temp;
 				}
 			}
-			permuteHeap(size - 1, aL, a);
+			permuteHeapRecursive(size - 1, aL, a);
 		}
+	}
+
+	public static ArrayList<ArrayList<Integer>> permuteHeaps(int n, ArrayList<Integer> a) {
+		ArrayList<ArrayList<Integer>> aL = new ArrayList<ArrayList<Integer>>();
+		ArrayList<Integer> toAdd = new ArrayList<Integer>(Collections.nCopies(n, 0));
+
+		aL.add(a);
+
+		for (int i = 0; i < n; i++) {
+			if (toAdd.get(i) < i) {
+				if (i % 2 == 0) {
+					int temp = a.get(i);
+					a.set(i, a.get(i - 1));
+					a.set(i - 1, temp);
+				} else {
+					int temp = a.get(toAdd.get(i));
+					a.set(toAdd.get(i), a.get(i));
+					a.set(i, temp);
+				}
+				aL.add((ArrayList<Integer>) a.clone());
+				toAdd.set(i, i + 1);
+			} else {
+				toAdd.set(i, 0);
+			}
+		}
+
+		return aL;
 	}
 
 	/**
