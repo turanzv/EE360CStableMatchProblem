@@ -9,6 +9,7 @@ import java.util.Arrays;
 
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.PagesPerMinute;
+import javax.xml.ws.Holder;
 
 import org.omg.CORBA.PUBLIC_MEMBER;
 
@@ -19,39 +20,45 @@ public class Assignment1 {
 		ArrayList<Integer> pairing = new ArrayList<Integer>();
 
 		// taken = true
-		//also used to gauge number of students and professors
+		// also used to gauge number of students and professors
 		boolean[] students = new boolean[preferences.getNumberOfStudents()];
 		boolean[] professors = new boolean[preferences.getNumberOfProfessors()];
-		
-		//ArrayList of professor preferences
+
+		// ArrayList of professor preferences
 		ArrayList<ArrayList<Integer>> professorList = preferences.getProfessors_preference();
 		ArrayList<ArrayList<Integer>> studentList = preferences.getStudents_preference();
 
-		//get every permutation of professors
+		// get every permutation of professors
 		ArrayList<Integer> pList = new ArrayList<Integer>();
-		for (int i = 0; i < professors.length; i++) {pList.add(i+1);}
+		for (int i = 0; i < professors.length; i++) {
+			pList.add(i + 1);
+		}
 		ArrayList<ArrayList<Integer>> professorPermutations = new ArrayList<ArrayList<Integer>>();
 		permuteHeap(professors.length, professorPermutations, pList.toArray(new Integer[pList.size()]));
-		//get every permutation of students
+		// get every permutation of students
 		ArrayList<Integer> sList = new ArrayList<Integer>();
-		for (int i = 0; i < students.length; i++) {sList.add(i+1);}
+		for (int i = 0; i < students.length; i++) {
+			sList.add(i + 1);
+		}
 		ArrayList<ArrayList<Integer>> studentPermutations = new ArrayList<ArrayList<Integer>>();
 		permuteHeap(professors.length, studentPermutations, sList.toArray(new Integer[sList.size()]));
-		
-		//iterate through permutations, checking each pairing for stability
-		for(int i = 0; i < professorPermutations.size(); i++) {
-			for(int j = 0; j < studentPermutations.size(); j++) {
-				
+
+		// iterate through permutations, checking each pairing for stability
+		for (int i = 0; i < professorPermutations.size(); i++) {
+			for (int j = 0; j < studentPermutations.size(); j++) {
+
 				ArrayList<Integer> currentProfessors = professorPermutations.get(i);
 				ArrayList<Integer> currentStudents = studentPermutations.get(j);
-				
-				for(int k = 0; k < currentProfessors.size(); k++) {
-					for(int l = 0; l < currentStudents.size(); l++) {
-						pairing.set(currentProfessors.get(k-1), currentStudents.get(l));
+
+				for (int k = 0; k < currentProfessors.size(); k++) {
+					for (int l = 0; l < currentStudents.size(); l++) {
+						pairing.set(currentProfessors.get(k - 1), currentStudents.get(l));
 					}
 				}
-				//check pairing, if stable return
-				
+				// check pairing, if stable return
+				if (checkPairing(pairing, preferences)) {
+					return pairing;
+				}
 			}
 		}
 
@@ -98,44 +105,6 @@ public class Assignment1 {
 	}
 
 	/**
-	 * This recursive function returns the permutation of an ArrayList
-	 * 
-	 * @param a
-	 *            ArrayList<Integer> to be permuted
-	 *
-	 *            public void permute(ArrayList<Integer> a) {
-	 * 
-	 *            ArrayList<ArrayList<Integer>> permutations = new
-	 *            ArrayList<ArrayList<Integer>>();
-	 * 
-	 *            for (int i = 0; i < a.size(); i++) { for(int j = 0; j < a.size();
-	 *            j++) {
-	 * 
-	 *            } } }
-	 * @return
-	 */
-
-	/*
-	 * public static ArrayList<ArrayList<Integer>>
-	 * permute(ArrayList<ArrayList<Integer>> aL, ArrayList<Integer> a) {
-	 * ArrayList<ArrayList<Integer>> permutations = new
-	 * ArrayList<ArrayList<Integer>>(); //begin with new list permutations.add(new
-	 * ArrayList<Integer>());
-	 * 
-	 * for(int i = 0; i < a.size(); i++) { ArrayList<ArrayList<Integer>> c = new
-	 * ArrayList<ArrayList<Integer>>();
-	 * 
-	 * for (ArrayList<Integer> l : permutations) { for (int k = 0; k < l.size()+1;
-	 * k++) { l.add(k, l.get(i)); ArrayList<Integer> t = new ArrayList<Integer>(l);
-	 * c.add(t);
-	 * 
-	 * l.remove(k); } } permutations = new ArrayList<ArrayList<Integer>>(c);
-	 * 
-	 * 
-	 * } return permutations; }
-	 */
-
-	/**
 	 * This method checks an ArrayList of matches for stability based on a
 	 * Preferences object
 	 * 
@@ -145,14 +114,70 @@ public class Assignment1 {
 	 */
 	public static boolean checkPairing(ArrayList<Integer> pairings, Preferences p) {
 
-		return false;
+		for (int i = 0; i < pairings.size(); i++) {
+			// our questionably faithful pair
+			int professor = i + 1;
+			int student = pairings.get(i);
+
+			for (int j = 0; j < pairings.size(); j++) {
+				// potential trouble couple
+				int professorX = j + 1;
+				int studentX = pairings.get(j);
+
+				// get each member's preference list
+				ArrayList<Integer> pPreference = p.getProfessors_preference().get(professor - 1);
+				ArrayList<Integer> sPreference = p.getStudents_preference().get(student - 1);
+				ArrayList<Integer> pXPreference = p.getProfessors_preference().get(professorX - 1);
+				ArrayList<Integer> sXPreference = p.getStudents_preference().get(studentX - 1);
+
+				// check if p prefers sX to s
+				for (int k = 0; k < pPreference.size(); k++) {
+					// if s is earlier on preferences, break
+					if (pPreference.get(k) == student) {
+						break;
+					} else if (pPreference.get(k) == studentX) { // else sX is earlier on the preference list
+						// if pX is first on sX's preference list, break
+						for (int l = 0; l < sXPreference.size(); l++) {
+							if (sXPreference.get(l) == professorX) { // if the infidelity is not mutual
+								break;
+							} else if (sXPreference.get(l) == professor) { // if the infidelity is mutual, return false
+																			// for instability
+								return false;
+							}
+						}
+					}
+				}
+
+				// check if s prefers pX to p
+				for (int k = 0; k < sPreference.size(); k++) {
+					// if p is earlier on preferences, break
+					if (sPreference.get(k) == professor) {
+						break;
+					} else if (sPreference.get(k) == professorX) { // else pX is earlier on the preference list
+						for (int l = 0; l < pXPreference.size(); l++) {
+							if (pXPreference.get(l) == studentX) { // if the infidelity is not mutual
+								break;
+							} else if (pXPreference.get(l) == student) { // if the infidelity is mutual, return false
+																			// for instability
+								return false;
+							}
+						}
+					}
+				}
+
+			}
+
+		}
+		return true;
 	}
 
-	public static void permuteHeap(int size, ArrayList<ArrayList<Integer>> aL, Integer [] a) {
+	public static void permuteHeap(int size, ArrayList<ArrayList<Integer>> aL, Integer[] a) {
 
 		if (size == 1) {
 			ArrayList<Integer> toAdd = new ArrayList<Integer>();
-			for(int i = 0; i < a.length; i++) {toAdd.add(a[i]);}
+			for (int i = 0; i < a.length; i++) {
+				toAdd.add(a[i]);
+			}
 			aL.add(toAdd);
 		} else {
 			for (int i = 0; i < size - 1; i++) {
@@ -162,12 +187,12 @@ public class Assignment1 {
 					a[i] = a[size - 1];
 					a[size - 1] = temp;
 				} else {
-					int temp = a[size-1];
-					a[size-1] = a[i];
+					int temp = a[size - 1];
+					a[size - 1] = a[i];
 					a[i] = temp;
 				}
 			}
-			permuteHeap(size-1, aL, a);
+			permuteHeap(size - 1, aL, a);
 		}
 	}
 }
