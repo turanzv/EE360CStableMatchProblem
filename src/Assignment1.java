@@ -3,19 +3,8 @@
  * Class to implement Stable Matching algorithms
  */
 
-import java.lang.reflect.Array;
-import java.security.AlgorithmConstraints;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-
-import javax.print.attribute.Size2DSyntax;
-import javax.print.attribute.standard.PagesPerMinute;
-import javax.swing.text.StyleConstants.ParagraphConstants;
-import javax.xml.ws.Holder;
-
-import org.omg.CORBA.PUBLIC_MEMBER;
-import org.omg.CosNaming.NamingContextExtPackage.AddressHelper;
 
 public class Assignment1 {
 
@@ -24,10 +13,12 @@ public class Assignment1 {
 		ArrayList<Integer> pairing = new ArrayList<Integer>(
 				Collections.nCopies(preferences.getNumberOfProfessors(), -1));
 
+		Preferences p = normalizePreferences(preferences);
+
 		// get every permutation of students
 		ArrayList<Integer> sList = new ArrayList<Integer>();
 		for (int i = 0; i < preferences.getNumberOfStudents(); i++) {
-			sList.add(i + 1);
+			sList.add(i);
 		}
 		ArrayList<ArrayList<Integer>> studentPermutations = permute(sList);
 
@@ -44,32 +35,33 @@ public class Assignment1 {
 				// }
 			}
 			// check pairing, if stable return
-			if (checkStableSet(pairing, preferences)) {
+			if (checkStableSet(pairing, p)) {
 				return pairing;
 			}
 		}
-		return new ArrayList<Integer>();
+		return pairing;
 
 	}
 
 	// Part2: Implement Gale-Shapely Algorithm
 	public static ArrayList<Integer> stableMatchGaleShapley(Preferences preferences) {
 
-		// ArrayList<Integer> to be returned
-		ArrayList<Integer> pairing = new ArrayList<Integer>(
-				Collections.nCopies(preferences.getNumberOfProfessors(), -1));
+		Preferences p = normalizePreferences(preferences);
 
-		ArrayList<ArrayList<Integer>> professorList = preferences.getProfessors_preference();
-		ArrayList<ArrayList<Integer>> studentList = preferences.getStudents_preference();
+		// ArrayList<Integer> to be returned
+		ArrayList<Integer> pairing = new ArrayList<Integer>(Collections.nCopies(p.getNumberOfProfessors(), -1));
+
+		ArrayList<ArrayList<Integer>> professorList = p.getProfessors_preference();
+		ArrayList<ArrayList<Integer>> studentList = p.getStudents_preference();
 
 		// for each professor, while there is a professor not matched
 		while (pairing.contains(-1)) {
-			PROFS: for (int i = 0; i < preferences.getNumberOfProfessors(); i++) {
+			PROFS: for (int i = 0; i < p.getNumberOfProfessors(); i++) {
 				if (pairing.get(i) != -1) {
 					continue;
 				}
-				int professor = i + 1;
-				ArrayList<Integer> professorPreference = professorList.get(professor - 1);
+				int professor = i;
+				ArrayList<Integer> professorPreference = professorList.get(professor);
 
 				// traverse preferences first through last
 				PROFPREF: for (int j = 0; j < professorPreference.size(); j++) {
@@ -78,23 +70,23 @@ public class Assignment1 {
 					// if student is not taken, take student
 					if (!pairing.contains(student)) {
 						// pair student with professor, mark the student taken
-						pairing.set(professor - 1, student);
+						pairing.set(professor, student);
 						break;
 
 					} else { // if student is taken, check if student would rather be with p than pX
 
 						// find which professor is paired with the student
-						int pX = arrayListIndexOf(pairing, student) + 1;
+						int pX = arrayListIndexOf(pairing, student);
 
 						// iterate through student's preferenceList
-						ArrayList<Integer> studentPreference = studentList.get(student - 1);
+						ArrayList<Integer> studentPreference = studentList.get(student);
 						for (int k = 0; k < studentPreference.size(); k++) {
 							// if pX comes first, leave student pair
 							if (studentPreference.get(k) == pX) {
 								break;
 							} else if (studentPreference.get(k) == professor) { // if p comes first, swap student
-								pairing.set(professor - 1, student); // put student to professor
-								pairing.set(pX - 1, -1); // make pX not taken
+								pairing.set(professor, student); // put student to professor
+								pairing.set(pX, -1); // make pX not taken
 								break PROFPREF;
 							}
 						}
@@ -110,11 +102,18 @@ public class Assignment1 {
 	// Part3: Matching with Costs
 	public static ArrayList<Cost> stableMatchCosts(Preferences preferences) {
 
+		// normalized preferences SHOULD NOT be passed into matching algorithms
+		 Preferences p = normalizePreferences(preferences);
+
 		// get professor's optimal pairing
 		ArrayList<Integer> profOpt = stableMatchGaleShapley(preferences);
 
 		// get student's optimal pairing
-		ArrayList<Integer> stuOpt = studentGaleShapely(preferences);
+		// switch preferences for reuse of stableMatchGaleShapely
+		Preferences studentPreferences = new Preferences(preferences.getNumberOfStudents(),
+				preferences.getNumberOfProfessors(), preferences.getStudents_preference(),
+				preferences.getProfessors_preference());
+		ArrayList<Integer> stuOpt = stableMatchGaleShapley(studentPreferences);
 
 		// combine all pairings in one list
 		ArrayList<Integer> pairing = new ArrayList<Integer>();
@@ -123,12 +122,12 @@ public class Assignment1 {
 
 		ArrayList<Cost> costs = new ArrayList<Cost>();
 
-		// for each pairing
-		for (int professor = 0; professor < pairing.size(); professor++) {
-			int student = pairing.get(professor);
+		// for each professor -> student pairing
+		for (int professor = 0; professor < profOpt.size(); professor++) {
+			int student = profOpt.get(professor);
 
 			// get professor preferences
-			ArrayList<Integer> pPref = preferences.getProfessors_preference().get(professor);
+			ArrayList<Integer> pPref = p.getProfessors_preference().get(professor);
 
 			// get professor cost
 			int pCost = 0;
@@ -139,7 +138,7 @@ public class Assignment1 {
 			}
 
 			// get student preferences
-			ArrayList<Integer> sPref = preferences.getStudents_preference().get(student);
+			ArrayList<Integer> sPref = p.getStudents_preference().get(student);
 
 			// get the student cost
 			int sCost = 0;
@@ -151,46 +150,76 @@ public class Assignment1 {
 
 			costs.add(new Cost(professor, student, pCost, sCost));
 		}
+		
+		//for each student -> professor pairing 
+		for (int student = 0; student < stuOpt.size(); student++) {
+			int professor = stuOpt.get(student);
+
+			// get student preferences
+			ArrayList<Integer> sPref = p.getStudents_preference().get(student);
+
+			// get student cost
+			int sCost = 0;
+			for (; sCost < sPref.size(); sCost++) {
+				if (sPref.get(sCost) == professor) {
+					break;
+				}
+			}
+
+			// get professor preferences
+			ArrayList<Integer> pPref = p.getProfessors_preference().get(professor);
+
+			// get the student cost
+			int pCost = 0;
+			for (; pCost < pPref.size(); pCost++) {
+				if (pPref.get(pCost) == student) {
+					break;
+				}
+			}
+
+			costs.add(new Cost(student, professor, sCost, pCost));
+		}
 
 		return costs;
 	}
 
 	public static ArrayList<Integer> studentGaleShapely(Preferences preferences) {
 
-		// ArrayList<Integer> to be returned
-		ArrayList<Integer> pairing = new ArrayList<Integer>(
-				Collections.nCopies(preferences.getNumberOfProfessors(), -1));
+		Preferences p = normalizePreferences(preferences);
 
-		ArrayList<ArrayList<Integer>> professorList = preferences.getProfessors_preference();
-		ArrayList<ArrayList<Integer>> studentList = preferences.getStudents_preference();
+		// ArrayList<Integer> to be returned
+		ArrayList<Integer> pairing = new ArrayList<Integer>(Collections.nCopies(p.getNumberOfProfessors(), -1));
+
+		ArrayList<ArrayList<Integer>> professorList = p.getProfessors_preference();
+		ArrayList<ArrayList<Integer>> studentList = p.getStudents_preference();
 
 		// for each student, while there is a student not matched
 		while (pairing.contains(-1)) {
 
 			// iterate through each student
-			for (int i = 0; i < preferences.getNumberOfStudents(); i++) {
+			for (int i = 0; i < p.getNumberOfStudents(); i++) {
 				// of the student is in the array, skip loop
-				if (arrayListIndexOf(pairing, i + 1) != -1) {
+				if (arrayListIndexOf(pairing, i) != -1) {
 					continue;
 				}
 
-				int student = i + 1;
-				ArrayList<Integer> studentPreference = studentList.get(student - 1);
+				int student = i;
+				ArrayList<Integer> studentPreference = studentList.get(student);
 
 				// traverse preferences first through last
 				STUPREF: for (int j = 0; j < studentPreference.size(); j++) {
 					// if professor is not taken, take the professor
 					int professor = studentPreference.get(j);
-					if (pairing.get(professor - 1) == -1) {
-						pairing.set(professor - 1, student);
+					if (pairing.get(professor) == -1) {
+						pairing.set(professor, student);
 						break;
 					} else { // if professor is taken, check if professor would rather be with s than with sX
 
 						// find which student is paired with the professor
-						int sX = pairing.get(professor - 1);
+						int sX = pairing.get(professor);
 
 						// iterate through professor's preferenceList
-						ArrayList<Integer> professorPreference = professorList.get(professor - 1);
+						ArrayList<Integer> professorPreference = professorList.get(professor);
 						for (int k = 0; k < professorPreference.size(); k++) {
 							// if sX comes first, leave professor pair
 							if (professorPreference.get(k) == sX) {
@@ -222,19 +251,19 @@ public class Assignment1 {
 
 		for (int i = 0; i < pairings.size(); i++) {
 			// our questionably faithful pair
-			int professor = i + 1;
+			int professor = i;
 			int student = pairings.get(i);
 
 			for (int j = 0; j < pairings.size(); j++) {
 				// potential trouble couple
-				int professorX = j + 1;
+				int professorX = j;
 				int studentX = pairings.get(j);
 
 				// get each member's preference list
-				ArrayList<Integer> pPreference = p.getProfessors_preference().get(professor - 1);
-				ArrayList<Integer> sPreference = p.getStudents_preference().get(student - 1);
-				ArrayList<Integer> pXPreference = p.getProfessors_preference().get(professorX - 1);
-				ArrayList<Integer> sXPreference = p.getStudents_preference().get(studentX - 1);
+				ArrayList<Integer> pPreference = p.getProfessors_preference().get(professor);
+				ArrayList<Integer> sPreference = p.getStudents_preference().get(student);
+				ArrayList<Integer> pXPreference = p.getProfessors_preference().get(professorX);
+				ArrayList<Integer> sXPreference = p.getStudents_preference().get(studentX);
 
 				// don't check a pair against itself
 				if (professor == professorX && student == studentX) {
@@ -324,5 +353,34 @@ public class Assignment1 {
 			}
 		}
 		return -1;
+	}
+
+	/**
+	 * Normalizes a list of preferences to be 0-referenced
+	 * 
+	 * @param a
+	 *            preference list ex. [1,2,3,4]
+	 * @return normalized preference list ex. [0,1,2,3]
+	 */
+	public static ArrayList<ArrayList<Integer>> normalizeList(ArrayList<ArrayList<Integer>> a) {
+
+		ArrayList<ArrayList<Integer>> r = new ArrayList<ArrayList<Integer>>();
+
+		// for each actor's preference
+		for (int i = 0; i < a.size(); i++) {
+			r.add(new ArrayList<Integer>());
+			// decrement the preference
+			for (int j = 0; j < a.get(i).size(); j++) {
+				r.get(i).add(a.get(i).get(j) - 1);
+			}
+		}
+
+		return r;
+	}
+
+	public static Preferences normalizePreferences(Preferences preferences) {
+		return new Preferences(preferences.getNumberOfProfessors(), preferences.getNumberOfStudents(),
+				normalizeList(preferences.getProfessors_preference()),
+				normalizeList(preferences.getStudents_preference()));
 	}
 }
