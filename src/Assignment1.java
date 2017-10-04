@@ -1,3 +1,8 @@
+/**
+ * Turan Vural
+ * tzv57
+ * Project1
+ */
 
 /**
  * Class to implement Stable Matching algorithms
@@ -183,62 +188,6 @@ public class Assignment1 {
 		return costs;
 	}
 
-	public static ArrayList<Integer> studentGaleShapely(Preferences preferences) {
-
-		Preferences p = normalizePreferences(preferences);
-
-		// ArrayList<Integer> to be returned
-		ArrayList<Integer> pairing = new ArrayList<Integer>(Collections.nCopies(p.getNumberOfProfessors(), -1));
-
-		ArrayList<ArrayList<Integer>> professorList = p.getProfessors_preference();
-		ArrayList<ArrayList<Integer>> studentList = p.getStudents_preference();
-
-		// for each student, while there is a student not matched
-		while (pairing.contains(-1)) {
-
-			// iterate through each student
-			for (int i = 0; i < p.getNumberOfStudents(); i++) {
-				// of the student is in the array, skip loop
-				if (arrayListIndexOf(pairing, i) != -1) {
-					continue;
-				}
-
-				int student = i;
-				ArrayList<Integer> studentPreference = studentList.get(student);
-
-				// traverse preferences first through last
-				STUPREF: for (int j = 0; j < studentPreference.size(); j++) {
-					// if professor is not taken, take the professor
-					int professor = studentPreference.get(j);
-					if (pairing.get(professor) == -1) {
-						pairing.set(professor, student);
-						break;
-					} else { // if professor is taken, check if professor would rather be with s than with sX
-
-						// find which student is paired with the professor
-						int sX = pairing.get(professor);
-
-						// iterate through professor's preferenceList
-						ArrayList<Integer> professorPreference = professorList.get(professor);
-						for (int k = 0; k < professorPreference.size(); k++) {
-							// if sX comes first, leave professor pair
-							if (professorPreference.get(k) == sX) {
-								break;
-							} else if (professorPreference.get(k) == student) { // if s comes first, swap professor
-								pairing.set(professor, student); // put student to current professor
-								break STUPREF;
-							}
-						}
-					}
-				}
-			}
-
-		}
-
-		return pairing;
-
-	}
-
 	/**
 	 * This method checks an ArrayList of matches for stability based on a
 	 * Preferences object
@@ -326,7 +275,6 @@ public class Assignment1 {
 		ArrayList<ArrayList<Integer>> r = new ArrayList<ArrayList<Integer>>();
 		// recursive call
 		ArrayList<ArrayList<Integer>> p = permute(a);
-		// for (ArrayList<Integer> smallerPermutated : p) {
 		for (int i = 0; i < p.size(); i++) {
 			ArrayList<Integer> pSlice = p.get(i);
 			for (int j = 0; j <= pSlice.size(); j++) {
